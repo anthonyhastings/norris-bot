@@ -1,0 +1,9 @@
+./**/.DS_Store
+.beepboop/
+.git/
+src/node_modules
+.dockerignore
+bot.yml
+Dockerfile
+LICENSE
+README.md
