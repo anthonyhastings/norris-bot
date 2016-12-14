@@ -10,7 +10,7 @@ class NorrisBot {
    * @param {Array} options.jokes
    */
   constructor(options) {
-    if (!options.token) {
+    if (typeof options.token !== 'string' || options.token.length <= 0) {
       throw new Error('NorrisBot: Missing token.');
     }
 

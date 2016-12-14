@@ -3,7 +3,7 @@
   "description": "A slack bot that tells Chuck Norris jokes.",
   "author": "Anthony Hastings <ar.hastings@gmail.com>",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "index.js",
   "license": "MIT",
   "private": true,
   "repository": {
@@ -11,9 +11,9 @@
     "url": "git@github.com:anthonyhastings/norris-bot.git"
   },
   "scripts": {
-    "lint": "eslint src/",
+    "lint": "eslint ./",
     "postinstall": "npm start",
-    "start": "babel-node src/index.js",
+    "start": "babel-node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
