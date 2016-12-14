@@ -1,0 +1,9 @@
+name: Norris Bot
+description: A slack bot that tells Chuck Norris jokes.
+author: Anthony Hastings
+author_avatar: .beepboop/author_avatar.jpg
+email: ar.hastings@gmail.com
+avatar: .beepboop/avatar.jpg
+slackscopes:
+  - bot
+  - commands
