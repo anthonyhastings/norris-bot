@@ -21,6 +21,7 @@ class NorrisBot {
     this.token = options.token;
     this.jokes = options.jokes;
 
+    this.jokeOfTheDay = null;
     this.jokeOfTheDayCronJob = null;
     this.controller = null;
     this.botInstance = null;
@@ -31,31 +32,27 @@ class NorrisBot {
     this.regexes = {
       salutations: ['\\bhi\\b', 'hiya', 'hey', 'hello', 'greetings'],
       gratitude: ['\\bthanks\\b', 'thank you'],
-      jokeRequests: ['joke'],
+      jokeOfTheDayRequests: ['joke of the day'],
+      randomJokeRequests: ['tell me a joke'],
       helpRequests: ['^help$']
     };
 
+    this.setJokeOfTheDay();
+    this.scheduleJokeOfTheDay();
     this.createController();
     this.setupEventListeners();
-
-    const rtmPromise = this.spawnBotAndStartRTM();
-
-    rtmPromise.then(
+    this.spawnBotAndStartRTM().then(
       ({bot, payload}) => {
         this.botInstance = bot;
         this.botIdentity = this.botInstance.identifyBot();
         this.botUser = payload.users.find((user) => user.id === this.botIdentity.id);
+        this.botGroups = this.getGroupsWithMember(payload.groups, this.botIdentity.id);
+        this.botChannels = this.getChannelsWithMember(payload.channels);
       },
       (err) => {
         throw new Error(err);
       }
     );
-
-    rtmPromise.then(({payload}) => {
-      this.botGroups = this.getGroupsWithMember(payload.groups, this.botIdentity.id);
-      this.botChannels = this.getChannelsWithMember(payload.channels);
-      this.scheduleJokeOfTheDay();
-    });
   }
 
   /**
@@ -142,15 +139,30 @@ class NorrisBot {
 
     // Telling a joke when being asked to.
     this.controller.hears(
-      this.regexes.jokeRequests,
-      ['direct_message', 'direct_mention', 'mention'],
+      this.regexes.randomJokeRequests,
+      ['direct_message', 'direct_mention'],
       (bot, message) => {
         bot.startConversation(message, (err, convo) => {
           if (message.user) {
             convo.say(`Sure thing <@${message.user}>.`);
           }
 
-          convo.say(this.getRandomJoke());
+          convo.say(`>${this.getRandomJoke()}`);
+        });
+      }
+    );
+
+    // Telling the joke of the day when being asked to.
+    this.controller.hears(
+      this.regexes.jokeOfTheDayRequests,
+      ['direct_message', 'direct_mention'],
+      (bot, message) => {
+        bot.startConversation(message, (err, convo) => {
+          if (message.user) {
+            convo.say(`Sure thing <@${message.user}>.`);
+          }
+
+          convo.say(`>${this.jokeOfTheDay}`);
         });
       }
     );
@@ -160,7 +172,12 @@ class NorrisBot {
       this.regexes.helpRequests,
       ['direct_message', 'direct_mention'],
       (bot, message) => {
-        bot.reply(message, 'Ask me to tell you a joke, e.g.\n>"@norrisbot, tell me a joke please!"');
+        bot.reply(message,
+          'Ask me to tell you a joke, e.g.\n' +
+          '>"@norrisbot, tell me a joke please!"\n\n' +
+          'Ask me to tell you the joke of the day, e.g.\n' +
+          '>"@norrisbot, tell me the joke of the day please!"'
+        );
       }
     );
 
@@ -182,28 +199,17 @@ class NorrisBot {
   scheduleJokeOfTheDay() {
     this.jokeOfTheDayCronJob = new CronJob({
       cronTime: '0 0 15 * * *',
-      onTick: this.postJokeOfTheDay,
+      onTick: this.setJokeOfTheDay,
       start: true,
       context: this
     });
   }
 
   /**
-   * Cycles all groups and channels the bot is a part of, then posts a
-   * randomly chosen "Joke of the Day".
+   * Sets the bots 'Joke of the Day' to a random joke.
    */
-  postJokeOfTheDay() {
-    const randomJoke = this.getRandomJoke();
-
-    [].concat(this.botGroups, this.botChannels).forEach((obj) => {
-      this.botInstance.api.chat.postMessage({
-        'as_user': false,
-        'channel': obj.id,
-        'icon_url': this.botUser.profile.image_192,
-        'text': `Joke of the day:\n>"${randomJoke}"`,
-        'username':	'norrisbot'
-      });
-    });
+  setJokeOfTheDay() {
+    this.jokeOfTheDay = this.getRandomJoke();
   }
 
   /**
@@ -249,7 +255,7 @@ class NorrisBot {
   }
 
   /**
-   * Updates the bots internal channel stack by adding the desired channel.
+   * Updates the bots channel stack by adding the desired channel.
    *
    * @param {Object} channel
    */
@@ -264,7 +270,7 @@ class NorrisBot {
   }
 
   /**
-   * Updates the bots internal channel stack by removing the desired ID.
+   * Updates the bots channel stack by removing the one with the specified ID.
    *
    * @param {String} channelID
    */
@@ -277,7 +283,7 @@ class NorrisBot {
   }
 
   /**
-   * Updates the bots internal group stack by adding the desired group.
+   * Updates the bots group stack by adding the desired group.
    *
    * @param {Object} group
    */
@@ -291,6 +297,11 @@ class NorrisBot {
     }
   }
 
+  /**
+   * Updates the bots group stack by removing the one with the specified ID.
+   *
+   * @param {String} groupID
+   */
   removeGroup(groupID) {
     const newGroups = this.botGroups.filter((group) => {
       return group.id !== groupID;
