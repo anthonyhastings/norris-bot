@@ -6,19 +6,25 @@ class NorrisBot {
    * Validates specified options then triggers internal methods to setup bot.
    *
    * @param {Object} options
-   * @param {String} options.token
+   * @param {String} options.slackToken
+   * @param {String} options.giphyToken
    * @param {Array} options.jokes
    */
   constructor(options) {
-    if (typeof options.token !== 'string' || options.token.length <= 0) {
-      throw new Error('NorrisBot: Missing token.');
+    if (typeof options.slackToken !== 'string' || options.slackToken.length <= 0) {
+      throw new Error('NorrisBot: Missing Slack token.');
+    }
+
+    if (typeof options.giphyToken !== 'string' || options.giphyToken.length <= 0) {
+      throw new Error('NorrisBot: Missing Giphy token.');
     }
 
     if (Array.isArray(options.jokes) === false || options.jokes.length <= 0) {
       throw new Error('NorrisBot: Missing jokes.');
     }
 
-    this.token = options.token;
+    this.slackToken = options.slackToken;
+    this.giphyToken = options.giphyToken;
     this.jokes = options.jokes;
 
     this.jokeOfTheDay = null;
@@ -73,7 +79,7 @@ class NorrisBot {
   spawnBotAndStartRTM() {
     return new Promise((resolve, reject) => {
       this.controller.spawn({
-        token: this.token
+        token: this.slackToken
       }).startRTM((err, bot, payload) => {
         if (err) {
           reject(err);
