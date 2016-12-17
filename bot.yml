@@ -4,6 +4,12 @@ author: Anthony Hastings
 author_avatar: .beepboop/author_avatar.jpg
 email: ar.hastings@gmail.com
 avatar: .beepboop/avatar.jpg
+config:
+  - name: GIPHY_TOKEN
+    friendly_name: Giphy Token
+    info: Giphy API Token for bots.
+    type: secret
+    global: true
 slackscopes:
   - bot
   - commands
