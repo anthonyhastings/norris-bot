@@ -35,7 +35,6 @@ class NorrisBot {
     this.controller = null;
     this.botInstance = null;
     this.botIdentity = null;
-    this.botUser = null;
     this.botGroups = null;
     this.botChannels = null;
     this.regexes = {
@@ -55,7 +54,6 @@ class NorrisBot {
       ({bot, payload}) => {
         this.botInstance = bot;
         this.botIdentity = this.botInstance.identifyBot();
-        this.botUser = payload.users.find((user) => user.id === this.botIdentity.id);
         this.botGroups = this.getGroupsWithMember(payload.groups, this.botIdentity.id);
         this.botChannels = this.getChannelsWithMember(payload.channels);
       },
