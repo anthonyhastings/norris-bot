@@ -1,4 +1,5 @@
 import Botkit from 'botkit';
+import giphy from 'giphy-api';
 import {CronJob} from 'cron';
 
 class NorrisBot {
@@ -27,6 +28,8 @@ class NorrisBot {
     this.giphyToken = options.giphyToken;
     this.jokes = options.jokes;
 
+    this.giphy = giphy(this.giphyToken);
+
     this.jokeOfTheDay = null;
     this.jokeOfTheDayCronJob = null;
     this.controller = null;
@@ -40,6 +43,7 @@ class NorrisBot {
       gratitude: ['\\bthanks\\b', 'thank you'],
       jokeOfTheDayRequests: ['joke of the day'],
       randomJokeRequests: ['tell me a joke'],
+      randomGifRequests: ['show me chuck'],
       helpRequests: ['^help$']
     };
 
@@ -173,6 +177,27 @@ class NorrisBot {
       }
     );
 
+    // Showing a random gif.
+    this.controller.hears(
+      this.regexes.randomGifRequests,
+      ['direct_message', 'direct_mention'],
+      (bot, message) => {
+        bot.startConversation(message, (err, convo) => {
+          if (message.user) {
+            convo.say(`Sure thing <@${message.user}>.`);
+          }
+
+          this.giphy.random('chuck norris').then((response) => {
+            if (response.meta.status === 200) {
+              convo.say(`${response.data.image_url}`);
+            } else {
+              convo.say('Uhoh... Something went wrong... Sorry!');
+            }
+          });
+        });
+      }
+    );
+
     // Giving help when it's been requested.
     this.controller.hears(
       this.regexes.helpRequests,
@@ -182,7 +207,9 @@ class NorrisBot {
           'Ask me to tell you a joke, e.g.\n' +
           '>"@norrisbot, tell me a joke please!"\n\n' +
           'Ask me to tell you the joke of the day, e.g.\n' +
-          '>"@norrisbot, tell me the joke of the day please!"'
+          '>"@norrisbot, tell me the joke of the day please!"\n\n' +
+          'Ask me to tell show you a gif, e.g.\n' +
+          '>"@norrisbot, show me chuck please!"'
         );
       }
     );
