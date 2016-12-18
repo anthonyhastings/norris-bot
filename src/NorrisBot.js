@@ -33,10 +33,6 @@ class NorrisBot {
     this.jokeOfTheDay = null;
     this.jokeOfTheDayCronJob = null;
     this.controller = null;
-    this.botInstance = null;
-    this.botIdentity = null;
-    this.botGroups = null;
-    this.botChannels = null;
     this.regexes = {
       salutations: ['\\bhi\\b', 'hiya', 'hey', 'hello', 'greetings'],
       gratitude: ['\\bthanks\\b', 'thank you'],
@@ -49,18 +45,8 @@ class NorrisBot {
     this.setJokeOfTheDay();
     this.scheduleJokeOfTheDay();
     this.createController();
+    this.spawnBotAndStartRTM();
     this.setupEventListeners();
-    this.spawnBotAndStartRTM().then(
-      ({bot, payload}) => {
-        this.botInstance = bot;
-        this.botIdentity = this.botInstance.identifyBot();
-        this.botGroups = this.getGroupsWithMember(payload.groups, this.botIdentity.id);
-        this.botChannels = this.getChannelsWithMember(payload.channels);
-      },
-      (err) => {
-        throw new Error(err);
-      }
-    );
   }
 
   /**
@@ -104,34 +90,6 @@ class NorrisBot {
     // Salutation upon joining a group.
     this.controller.on('bot_group_join', (bot, message) => {
       bot.reply(message, 'Howdy folks.');
-    });
-
-    // Updates internal channel stack when bot joins a channel.
-    this.controller.on('channel_joined', (bot, message) => {
-      const {channel} = message;
-
-      this.addChannel(channel);
-    });
-
-    // Updates internal channel stack when bot leaves a channel.
-    this.controller.on('channel_left', (bot, message) => {
-      const {channel: channelID} = message;
-
-      this.removeChannel(channelID);
-    });
-
-    // Updates internal channel stack when bot joins a group.
-    this.controller.on('group_joined', (bot, message) => {
-      const {channel: group} = message;
-
-      this.addGroup(group);
-    });
-
-    // Updates internal group stack when bot leaves a group.
-    this.controller.on('group_left', (bot, message) => {
-      const {channel: groupID} = message;
-
-      this.removeGroup(groupID);
     });
 
     // Salutation to someone speaking to the bot.
@@ -185,13 +143,18 @@ class NorrisBot {
             convo.say(`Sure thing <@${message.user}>.`);
           }
 
-          this.giphy.random('chuck norris').then((response) => {
-            if (response.meta.status === 200) {
-              convo.say(`${response.data.image_url}`);
-            } else {
-              convo.say('Uhoh... Something went wrong... Sorry!');
+          this.giphy.random('chuck norris').then(
+            (response) => {
+              if (response.meta.status === 200) {
+                convo.say(`${response.data.image_url}`);
+              } else {
+                convo.say('Uhoh... Something went wrong... Sorry!');
+              }
+            },
+            (error) => {
+              throw new Error(error);
             }
-          });
+          );
         });
       }
     );
@@ -252,93 +215,6 @@ class NorrisBot {
     const randomIndex = Math.floor(Math.random() * this.jokes.length);
 
     return this.jokes[randomIndex];
-  }
-
-  /**
-   * Looks inside of groups to filter down the list to only include groups
-   * that aren't archived and that a specified member is a part of.
-   *
-   * @param {Array} groups
-   * @param {String} memberID
-   * @returns {Array}
-   */
-  getGroupsWithMember(groups, memberID) {
-    return groups.filter((group) => {
-      const isNotArchived = group.is_archived === false;
-      const botBelongsToGroup = group.members.includes(memberID);
-
-      return (isNotArchived && botBelongsToGroup);
-    });
-  }
-
-  /**
-   * Looks inside of channels to filter down the list to only include channels
-   * that aren't archived and that a specified member is a part of.
-   *
-   * @param {Array} channels
-   * @param {String} memberID
-   * @returns {Array}
-   */
-  getChannelsWithMember(channels) {
-    return channels.filter((channel) => {
-      return (channel.is_archived === false && channel.is_member);
-    });
-  }
-
-  /**
-   * Updates the bots channel stack by adding the desired channel.
-   *
-   * @param {Object} channel
-   */
-  addChannel(channel) {
-    const channelExists = Boolean(this.botChannels.find((botChannel) => {
-      return botChannel.id === channel.id;
-    }));
-
-    if (!channelExists) {
-      this.botChannels = this.botChannels.concat(channel);
-    }
-  }
-
-  /**
-   * Updates the bots channel stack by removing the one with the specified ID.
-   *
-   * @param {String} channelID
-   */
-  removeChannel(channelID) {
-    const newChannels = this.botChannels.filter((channel) => {
-      return channel.id !== channelID;
-    });
-
-    this.botChannels = newChannels;
-  }
-
-  /**
-   * Updates the bots group stack by adding the desired group.
-   *
-   * @param {Object} group
-   */
-  addGroup(group) {
-    const groupExists = Boolean(this.botGroups.find((botGroup) => {
-      return botGroup.id === group.id;
-    }));
-
-    if (!groupExists) {
-      this.botGroups = this.botGroups.concat(group);
-    }
-  }
-
-  /**
-   * Updates the bots group stack by removing the one with the specified ID.
-   *
-   * @param {String} groupID
-   */
-  removeGroup(groupID) {
-    const newGroups = this.botGroups.filter((group) => {
-      return group.id !== groupID;
-    });
-
-    this.botGroups = newGroups;
   }
 }
 
