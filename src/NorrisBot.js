@@ -1,4 +1,5 @@
 import Botkit from 'botkit';
+import BeepBoop from 'beepboop-botkit';
 import giphy from 'giphy-api';
 import {CronJob} from 'cron';
 
@@ -12,10 +13,6 @@ class NorrisBot {
    * @param {Array} options.jokes
    */
   constructor(options) {
-    if (typeof options.slackToken !== 'string' || options.slackToken.length <= 0) {
-      throw new Error('NorrisBot: Missing Slack token.');
-    }
-
     if (typeof options.giphyToken !== 'string' || options.giphyToken.length <= 0) {
       throw new Error('NorrisBot: Missing Giphy token.');
     }
@@ -27,12 +24,11 @@ class NorrisBot {
     this.slackToken = options.slackToken;
     this.giphyToken = options.giphyToken;
     this.jokes = options.jokes;
-
     this.giphy = giphy(this.giphyToken);
-
     this.jokeOfTheDay = null;
     this.jokeOfTheDayCronJob = null;
     this.controller = null;
+    this.beepboop = null;
     this.regexes = {
       salutations: ['\\bhi\\b', 'hiya', 'hey', 'hello', 'greetings'],
       gratitude: ['\\bthanks\\b', 'thank you'],
@@ -45,8 +41,13 @@ class NorrisBot {
     this.setJokeOfTheDay();
     this.scheduleJokeOfTheDay();
     this.createController();
-    this.spawnBotAndStartRTM();
     this.setupEventListeners();
+
+    if (this.slackToken) {
+      this.spawnBotAndStartRTM();
+    } else {
+      this.startBeepboopWithController();
+    }
   }
 
   /**
@@ -56,25 +57,6 @@ class NorrisBot {
     this.controller = Botkit.slackbot({
       retry: Infinity,
       debug: false
-    });
-  }
-
-  /**
-   * Spawn an instance of the bot and connects it to Real-time messaging API.
-   *
-   * @returns {Promise}
-   */
-  spawnBotAndStartRTM() {
-    return new Promise((resolve, reject) => {
-      this.controller.spawn({
-        token: this.slackToken
-      }).startRTM((err, bot, payload) => {
-        if (err) {
-          reject(err);
-        }
-
-        resolve({bot, payload});
-      });
     });
   }
 
@@ -185,6 +167,33 @@ class NorrisBot {
         bot.reply(message, `You're welcome${userGreeting}.`);
       }
     );
+  }
+
+  /**
+   * Spawn an instance of the bot and connects it to Real-time messaging API.
+   *
+   * @returns {Promise}
+   */
+  spawnBotAndStartRTM() {
+    return new Promise((resolve, reject) => {
+      this.controller.spawn({
+        token: this.slackToken
+      }).startRTM((err, bot, payload) => {
+        if (err) {
+          reject(err);
+        }
+
+        resolve({bot, payload});
+      });
+    });
+  }
+
+  /**
+   * Initialises BeepBoop wrapper around our controller to bring multi-team
+   * capabilities to the bot.
+   */
+  startBeepboopWithController() {
+    this.beepboop = BeepBoop.start(this.controller);
   }
 
   /**
