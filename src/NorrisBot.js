@@ -146,13 +146,15 @@ class NorrisBot {
       this.regexes.helpRequests,
       ['direct_message', 'direct_mention'],
       (bot, message) => {
+        const botUsername = this.getBotUsername(bot);
+
         bot.reply(message,
           'Ask me to tell you a joke, e.g.\n' +
-          '>"@norrisbot, tell me a joke please!"\n\n' +
+          `>"<@${botUsername}>, tell me a joke please!"\n\n` +
           'Ask me to tell you the joke of the day, e.g.\n' +
-          '>"@norrisbot, tell me the joke of the day please!"\n\n' +
+          `>"<@${botUsername}>, tell me the joke of the day please!"\n\n` +
           'Ask me to tell show you a gif, e.g.\n' +
-          '>"@norrisbot, show me chuck please!"'
+          `>"<@${botUsername}>, show me chuck please!"`
         );
       }
     );
@@ -194,6 +196,16 @@ class NorrisBot {
    */
   startBeepboopWithController() {
     this.beepboop = BeepBoop.start(this.controller);
+  }
+
+  /**
+   * Determines the bots username.
+   *
+   * @param {Object} bot - Instance of the bot.
+   * @returns {String}
+   */
+  getBotUsername(bot) {
+    return bot.identifyBot().name;
   }
 
   /**
