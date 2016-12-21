@@ -66,11 +66,13 @@ class NorrisBot {
   setupEventListeners() {
     // Salutation upon joining a channel.
     this.controller.on('bot_channel_join', (bot, message) => {
+      console.log('Event::bot_channel_join');
       bot.reply(message, 'Howdy folks.');
     });
 
     // Salutation upon joining a group.
     this.controller.on('bot_group_join', (bot, message) => {
+      console.log('Event::bot_group_join');
       bot.reply(message, 'Howdy folks.');
     });
 
@@ -79,6 +81,7 @@ class NorrisBot {
       this.regexes.salutations,
       ['direct_message', 'direct_mention', 'mention'],
       (bot, message) => {
+        console.log('Event::salutation');
         const userGreeting = (message.user) ? ` <@${message.user}>` : '';
 
         bot.reply(message, `Howdy${userGreeting}.`);
@@ -90,6 +93,8 @@ class NorrisBot {
       this.regexes.randomJokeRequests,
       ['direct_message', 'direct_mention'],
       (bot, message) => {
+        console.log('Event::randomJoke');
+
         bot.startConversation(message, (err, convo) => {
           if (message.user) {
             convo.say(`Sure thing <@${message.user}>.`);
@@ -105,6 +110,8 @@ class NorrisBot {
       this.regexes.jokeOfTheDayRequests,
       ['direct_message', 'direct_mention'],
       (bot, message) => {
+        console.log('Event::jokeOfTheDay');
+
         bot.startConversation(message, (err, convo) => {
           if (message.user) {
             convo.say(`Sure thing <@${message.user}>.`);
@@ -120,6 +127,8 @@ class NorrisBot {
       this.regexes.randomGifRequests,
       ['direct_message', 'direct_mention'],
       (bot, message) => {
+        console.log('Event::randomGif');
+
         bot.startConversation(message, (err, convo) => {
           if (message.user) {
             convo.say(`Sure thing <@${message.user}>.`);
@@ -146,6 +155,8 @@ class NorrisBot {
       this.regexes.helpRequests,
       ['direct_message', 'direct_mention'],
       (bot, message) => {
+        console.log('Event::helpRequest');
+
         const botUsername = this.getBotUsername(bot);
 
         bot.reply(message,
@@ -164,6 +175,8 @@ class NorrisBot {
       this.regexes.gratitude,
       ['direct_message', 'direct_mention', 'mention'],
       (bot, message) => {
+        console.log('Event::gratitude');
+
         const userGreeting = (message.user) ? ` <@${message.user}>` : '';
 
         bot.reply(message, `You're welcome${userGreeting}.`);
